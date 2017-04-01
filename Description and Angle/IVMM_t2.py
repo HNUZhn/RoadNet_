@@ -202,6 +202,28 @@ def getCP(fsegmentList, P):
         min_len.append(len(list(D2)))
     return resultList,min_len
 
+def get_mindisandcordinations(P,seg):
+    minD = []
+    minD_C = []
+    tempHeadC = []
+    temp1 = 0
+    tempList1 = []
+    tempList2 = []
+    tempList3 = []
+    for itemC in seg.cordinations:
+        if len(tempHeadC) != 0:
+            tempList1.append(get_Distance_and_Coordinate(tempHeadC, itemC, P)[0])
+            tempList2.append(get_Distance_and_Coordinate(tempHeadC, itemC, P)[1])
+            tempList3.append([tempHeadC,itemC])
+            # print(get_Distance_and_Coordinate(tempHeadC, itemC, P))
+            # print(tempList2)
+        tempHeadC = itemC
+    minD = min(tempList1)
+    minD_C= tempList2[tempList1.index(min(tempList1))]
+    minD_app = tempList3[tempList1.index(min(tempList1))]
+
+    return minD,minD_C,minD_app
+
 def matchGPStoRoad(data,fsegmentlist,froadlist,angle):
     obxy = data.loc[:, ["Lon", "Lat", "Direct"]]
     dislist = []
@@ -209,6 +231,7 @@ def matchGPStoRoad(data,fsegmentlist,froadlist,angle):
     obuselist = []
     segid = []
     segbid = []
+    matchlist = []
     for ob_1 in obxy.values:
         cpob_1 = getCP(fsegmentlist,ob_1[0:2])
         if (len(cpob_1[0])) == 0:
@@ -247,6 +270,7 @@ def matchGPStoRoad(data,fsegmentlist,froadlist,angle):
                 minfs = [checklist[0][0], minuse[1]]
                 minsegid = minuse[1].getID()
                 minsegbid = minuse[1].getbID()
+                matchC = get_mindisandcordinations(ob_1[0:2], minuse[1])[1]
                 for check_data in checklist:
                     if check_data[1][0]<mindis:
                         mindis = check_data[1][0]
@@ -254,12 +278,14 @@ def matchGPStoRoad(data,fsegmentlist,froadlist,angle):
                         minfs = [check_data[0], minuse[1]]
                         minsegid = check_data[1][1].getID()
                         minsegbid = check_data[1][1].getbID()
+                        matchC = get_mindisandcordinations(ob_1[0:2],minuse[1])[1]
 
                 fslist.append(minfs)
                 obuselist.append(minuse)
                 segid.append(minsegid)
                 segbid.append(minsegbid)
                 dislist.append(mindis)
+                matchlist.append(matchC)
 
             else:
                 minuse = checklist[0][1]
@@ -267,12 +293,14 @@ def matchGPStoRoad(data,fsegmentlist,froadlist,angle):
                 minfs = [checklist[0][0], minuse[1]]
                 minsegid = minuse[1].getID()
                 minsegbid = minuse[1].getbID()
+                matchC = get_mindisandcordinations(ob_1[0:2], minuse[1])[1]
 
                 fslist.append(minfs)
                 obuselist.append(minuse)
                 segid.append(minsegid)
                 segbid.append(minsegbid)
                 dislist.append(mindis)
+                matchlist.append(matchC)
 
         else:
             minfs = []
@@ -280,14 +308,16 @@ def matchGPStoRoad(data,fsegmentlist,froadlist,angle):
             minsegid = None
             minsegbid = None
             mindis = None
+            matchC = []
 
             fslist.append(minfs)
             obuselist.append(minuse)
             segid.append(minsegid)
             segbid.append(minsegbid)
             dislist.append(mindis)
+            matchlist.append(matchC)
         # print (len(segid))
-    return  obuselist,segid,segbid,fslist,dislist
+    return  obuselist,segid,segbid,fslist,dislist,matchlist
 
 ###IVAM算法结束
 ##去重函数
@@ -318,27 +348,17 @@ want = matchGPStoRoad(obdata_useful,fsegmentList,froadList,30)
 obuselist = want[0]
 fs_list = toRepeat(want[3])
 fslist = [i for i in fs_list if i != []]
+matchlist = [i for i in want[5] if i != []]
 print ("1:",len(obuselist),toRepeat(obuselist))
 print ("2:",len(fslist),fslist)
 print ("3:",len(want[3]),want[3])
 print(len(want[4]),want[4])
-#去有用点的匹配子路段数据结构
-fseg_uselist1 = []
-for ob_usedata in obuselist:
-    if ob_usedata != []:
-        fseg_data  = ob_usedata[1]
-        fseg_uselist1.append(fseg_data)
-fseg_uselist = toRepeat(fseg_uselist1)
-print (len(fseg_uselist1),fseg_uselist1)
-fseg_uselist = [fseg_uselist1[0]]
-for i_fs in range(len(fseg_uselist1)-1):
-    if not compare(fseg_uselist1[i_fs],fseg_uselist1[i_fs+1]):
-        fseg_uselist.append(fseg_uselist1[i_fs+1])
-print(len(fseg_uselist), fseg_uselist)
-#可视化
-for usedata in fseg_uselist:
+print(len(want[5]),want[5])
+
+#匹配子路段可视化
+for usedata in fslist:
     if usedata != []:
-        cpobseg = usedata
+        cpobseg = usedata[1]
         LonXc = list(zip(*cpobseg.cordinations))[0]
         LatYc = list(zip(*cpobseg.cordinations))[1]
         plt.plot(LonXc, LatYc, c='r', linestyle='-', label='Road', linewidth=5, alpha=0.7)
@@ -368,16 +388,20 @@ def getStartEndList(fslist):
 list_se = getStartEndList(fslist)
 print (list_se)
 
-printNodeIDListlist = []
-for data_se in list_se:
-    ans = AStar(data_se[0], data_se[1])
-    print ("ASN 为",ans)
-    if ans == False:
-        printNodeIDList = [StartID, EndID]
-    else:
-        printNodeIDList = ans
-    printNodeIDListlist.append(printNodeIDList)
-print(printNodeIDListlist)
+##A*匹配Joint点
+def getAStarmatchJoint(list_se):
+    printNodeIDListlist = []
+    for data_se in list_se:
+        ans = AStar(data_se[0], data_se[1])
+        print ("ASN 为",ans)
+        if ans == False:
+            printNodeIDList = [data_se[0], data_se[1]]
+        else:
+            printNodeIDList = ans
+        printNodeIDListlist.append(printNodeIDList)
+    return printNodeIDListlist
+
+printNodeIDListlist = getAStarmatchJoint(list_se)
 
 ##A*匹配Joint可视化
 for NodeIDList in printNodeIDListlist:
@@ -386,17 +410,87 @@ for NodeIDList in printNodeIDListlist:
             if itemJ.id == itemID:
                 plt.scatter(itemJ.coordinate[0], itemJ.coordinate[1], c='g', s=90, marker='o', alpha=0.9, edgecolors='none')
 ##A*匹配Segment可视化
+addseglist = []
 for NodeIDList_2 in printNodeIDListlist:
     for i in range(len(NodeIDList_2)-1):
         for itemS in fsegmentList:
             headC = find_tJoint_byID(NodeIDList_2[i]).coordinate
             tailC = find_tJoint_byID(NodeIDList_2[i+1]).coordinate
-            if ((itemS.getHead() == headC) & (itemS.getTail() == tailC)) | ((itemS.getTail() == headC) & (itemS.getHead() == tailC)):
+            if ((itemS.getHead() == headC) & (itemS.getTail() == tailC))  | ((itemS.getTail() == headC) & (itemS.getHead() == tailC)):
                 LonXs = list(zip(*itemS.cordinations))[0]
                 LatYs = list(zip(*itemS.cordinations))[1]
                 plt.plot(LonXs, LatYs, c='m', linestyle='-', label='Road', linewidth=5, alpha=0.8)
+                if ((itemS.getHead() == headC) & (itemS.getTail() == tailC)):
+                    addseglist.append(["-",itemS])
+                elif ((itemS.getTail() == headC) & (itemS.getHead() == tailC)):
+                    addseglist.append(["+", itemS])
+print(addseglist)
 
+def complete(a,b):
+    def gethead(c):
+        signal = c[0]
+        if signal == "+":
+            head = c[1].getHead()
+            tail = c[1].getTail()
+        else:
+            head = c[1].getTail()
+            tail = c[1].getHead()
+        return head
 
+    def gettail(d):
+        signal = d[0]
+        if signal == "+":
+            head = d[1].getHead()
+            tail = d[1].getTail()
+        else:
+            head = d[1].getTail()
+            tail = d[1].getHead()
+        return tail
+
+    # finnallist = a
+    # for i in range(len(a)-1):
+    #     tail = gettail(a[i])
+    #     head_next = gethead(a[i+1])
+    #     print (tail,head_next)
+    #     if tail != head_next:
+    #         print("不相等",tail, head_next)
+    #         for seg_b in b:
+    #             head_b = gethead(seg_b)
+    #             tail_b = gettail(seg_b)
+    #             if tail == head_b:
+    #                 print(a[i][1].getID(),seg_b[1].getID())
+    #                 a_index = finnallist.index(a[i])
+    #                 finnallist.insert(a_index+1,seg_b)
+    #                 b.remove(seg_b)
+    #                 tail = tail_b
+    #             if tail == head_next:
+    #                 break
+    #     else:continue
+
+    for i in range(len(a)+len(b)-1):
+        tail = gettail(a[i])
+        head_next = gethead(a[i+1])
+        # print (tail,head_next)
+        if tail != head_next:
+            # print("不相等",tail, head_next)
+            for seg_b in b:
+                head_b = gethead(seg_b)
+                tail_b = gettail(seg_b)
+                if tail == head_b:
+                    print(a[i][1].getID(),seg_b[1].getID())
+                    a.insert(i+1,seg_b)
+                    b.remove(seg_b)
+                    tail = tail_b
+                if tail == head_next:
+                    break
+        else:continue
+    finnallist = a
+    return finnallist
+
+finnallist = complete(fslist,addseglist)
+print (len(finnallist),finnallist)
+# for fi in finnallist:
+#     print ([fi[1].getID(),fi[1].getHead(),fi[1].getTail()])
 
 ###路网可视化
 ## 画图部分
@@ -405,13 +499,20 @@ for item in fsegmentList:
     LonX = list(zip(*item.cordinations))[0]
     LatY = list(zip(*item.cordinations))[1]
     plt.plot(LonX, LatY, c='k', linestyle='-', label='Road', linewidth=2, alpha=0.5)
+    plt.text((item.getHead()[0] + item.getTail()[0]) / 2, (item.getHead()[1] + item.getTail()[1]) / 2, item.getID(), color='y', alpha=0.5)
 
 # 画交叉点
 for itemJ in fjointList:
     plt.scatter(itemJ.coordinate[0], itemJ.coordinate[1], c='b', s=20, marker='o', alpha=0.4, edgecolors='none')
-    plt.text(itemJ.coordinate[0], itemJ.coordinate[1], itemJ.getID(),color='y', alpha=0.5)
+    # plt.text(itemJ.coordinate[0], itemJ.coordinate[1], itemJ.getID(),color='y', alpha=0.5)
 
+#画GPS采样点
 plt.scatter(obdata_useful['Lon'],obdata_useful['Lat'],s = 50,c = 'b',marker='o', alpha=0.9, edgecolors='none')
+
+#画GPS匹配点
+for matchpoint in matchlist:
+    plt.scatter(matchpoint[0],matchpoint[1],s = 50 , c = 'c',marker='o', alpha=0.9, edgecolors='none')
+
 xmajorFormatter = FormatStrFormatter('%.3f')  # 设置x轴标签文本的格式
 ax = plt.gca()
 ax.xaxis.set_major_formatter(xmajorFormatter)
@@ -419,7 +520,6 @@ ax.yaxis.set_major_formatter(xmajorFormatter)
 plt.grid(True)
 endTime = datetime.datetime.now()
 print('本次程序运行时间为：', endTime-startTime)
-
 
 plt.show()
 
