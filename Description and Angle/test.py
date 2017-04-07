@@ -160,3 +160,13 @@ def getFCrosslist(roadlist, dis, divang):
     notrealdoublelist = [k for k in notrealdouble if k[0] not in crossList]
 
     return fcrosslist, notrealcrosslist, notrealdoublelist
+
+aaa = [1,2,3,4,5]
+bbb = [1,2]
+ccc = [2,1]
+
+if bbb in aaa:
+    print("正的对")
+if ccc in aaa:
+    print("反过来对")
+else:print("反过来不对")

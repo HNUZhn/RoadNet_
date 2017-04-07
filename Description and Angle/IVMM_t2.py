@@ -492,6 +492,75 @@ print (len(finnallist),finnallist)
 # for fi in finnallist:
 #     print ([fi[1].getID(),fi[1].getHead(),fi[1].getTail()])
 
+def getGPSdistance(startindex,endindex,finnallist):
+    startc = want[5][startindex]
+    endc = want[5][endindex]
+    startseg = want[3][startindex]
+    endseg = want[3][endindex]
+    for i in range(len(finnallist)):
+        if startseg ==finnallist[i]:
+            startseg_index = i
+        if endseg ==finnallist[i]:
+            endseg_index = i
+    useful_seg = finnallist[startseg_index+1:endseg_index]
+    dis = 0
+    for j in useful_seg:
+        dis += j[1].getLength()
+    start_inseg = finnallist[startseg_index]
+    end_inseg = finnallist[endseg_index]
+    print (start_inseg[1].cordinations,startc)
+    start_cp = get_mindisandcordinations(seg=start_inseg[1],P=startc)[2]
+    end_cp = get_mindisandcordinations(seg = end_inseg[1],P = endc)[2]
+    if start_inseg[0] == "+":
+        sindex = start_inseg[1].getCordinations().index(start_cp[1])
+        sdis = ((start_cp[1][1]-startc[1])**2)+((start_cp[1][0]-startc[0])**2)**0.5
+        former = []
+        for item in start_inseg[1].getCordinations()[sindex:]:
+            if len(former) != 0:
+                sdis = sdis + ((item[0] - former[0]) ** 2 + (item[1] - former[1]) ** 2) ** 0.5
+                former = item
+            else:
+                former = item
+
+    else:
+        sindex = start_inseg[0].getCordinations().index(start_cp[0])
+        sdis = ((start_cp[0][1] - startc[1]) ** 2) + ((start_cp[0][0] - startc[0]) ** 2) ** 0.5
+        former = []
+        for item in start_inseg[1].getCordinations()[:sindex]:
+            if len(former) != 0:
+                sdis = sdis + ((item[0] - former[0]) ** 2 + (item[1] - former[1]) ** 2) ** 0.5
+                former = item
+            else:
+                former = item
+
+    if end_inseg[0] == "-":
+        eindex = end_inseg[1].getCordinations().index(end_cp[1])
+        edis = ((end_cp[1][1] - endc[1]) ** 2) + ((end_cp[1][0] - endc[0]) ** 2) ** 0.5
+        eformer = []
+        for item in end_inseg[1].getCordinations()[eindex:]:
+            if len(eformer) != 0:
+                edis = edis + ((item[0] - eformer[0]) ** 2 + (item[1] - eformer[1]) ** 2) ** 0.5
+                eformer = item
+            else:
+                eformer = item
+
+    else:
+        eindex = end_inseg[0].getCordinations().index(end_cp[0])
+        edis = ((end_cp[0][1] - endc[1]) ** 2) + ((end_cp[0][0] - endc[0]) ** 2) ** 0.5
+        eformer = []
+        for item in end_inseg[1].getCordinations()[:eindex]:
+            if len(eformer) != 0:
+                edis = edis + ((item[0] - eformer[0]) ** 2 + (item[1] - eformer[1]) ** 2) ** 0.5
+                eformer = item
+            else:
+                eformer = item
+
+    dis = dis + sdis +edis
+    return dis
+
+
+dissAB = getGPSdistance(1,13,finnallist)
+print ("从第1到13采样点的实际距离为",dissAB)
 ###路网可视化
 ## 画图部分
 # 画路网
