@@ -24,7 +24,7 @@ class GetData:
         for item in data.features:
             if len(item['geometry']) > 0:  # 保证有数据
                 if 'building' in item['properties']:
-                    # if item['properties']['building'] == 'yes':  # 在预设规定的类型中
+                    # if item['properties']['building'] == 'yes':
                     buildinglist.append(RoadClass.Building(item['properties'], item['geometry']['coordinates']))
         return buildinglist
 

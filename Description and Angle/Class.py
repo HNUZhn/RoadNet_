@@ -14,6 +14,7 @@ class Building:
         self.description = d
         self.cordinations = c
         Building.tempCount += 1
+        
     def getID(self):
         return self.id
 

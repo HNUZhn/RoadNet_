@@ -6,6 +6,7 @@ import math
 import matplotlib
 from getdata import *
 
+
 jsonURL = 'street2.json'
 # jsonURL = 'C:\\Users\\Cimucy\\Documents\\Tencent Files\\737728114\\FileRecv\\hnumap1.json'
 jsondata = pd.read_json(jsonURL)
