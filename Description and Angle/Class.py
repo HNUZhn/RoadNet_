@@ -2,6 +2,31 @@ import pandas as pd
 import numpy as np
 import math
 
+class Building:
+    id = []
+    description = []
+    cordinations = []
+    bezierP = []
+    tempCount = 0
+
+    def __init__(self, d, c):
+        self.id = Building.tempCount + 1
+        self.description = d
+        self.cordinations = c
+        Building.tempCount += 1
+    def getID(self):
+        return self.id
+
+    def getDescription(self):
+        return self.description
+
+    def getCordinations(self):
+        return self.cordinations
+
+    def getBezier(self):
+        return self.bezierP
+
+
 class Road:
     id = []
     description = []

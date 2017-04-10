@@ -1,15 +1,22 @@
 # -*- coding:utf-8 -*-
 import pandas as pd
 import matplotlib.pyplot as plt
-from readdata import *
 import math
 import matplotlib
 from getdata import *
 
-jsonURL = 'street2.json'
-# jsonURL = 'C:\\Users\\Cimucy\\Documents\\Tencent Files\\737728114\\FileRecv\\hnumap1.json'
+# jsonURL = 'street2.json'
+jsonURL = 'C:\\Users\\Cimucy\\Documents\\Tencent Files\\737728114\\FileRecv\\hnumap1.json'
 jsondata = pd.read_json(jsonURL)
 buildingList = GetData.getBuilding(jsondata)
+roadList = GetData.getRoadlist(jsondata)
+crossList = GetData.getCrosslist(roadList)
+segmentList = GetData.getsegmentlist(roadList,crossList)
+froadList = GetData.getFRoadlist(roadList,0.0025,25)
+fcrosslist = GetData.getFCrosslist(roadList,0.0025,25)[0]
+fsegmentList = GetData.getFsegmentlist(roadList,0.0025,25)
+fjointList = GetData.getJointlist(fsegmentList, fcrosslist)
+
 zhfont1 = matplotlib.font_manager.FontProperties(fname=r'C:\windows\Fonts\STSong.ttf')#设置字体方法
 for item in fsegmentList:
     if item.description is None:

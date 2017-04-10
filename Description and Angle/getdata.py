@@ -19,6 +19,15 @@ class GetData:
                             roadList.append(RoadClass.Road(item['properties'], item['geometry']['coordinates']))
         return roadList
 
+    def getBuilding(data):
+        buildinglist = []
+        for item in data.features:
+            if len(item['geometry']) > 0:  # 保证有数据
+                if 'building' in item['properties']:
+                    # if item['properties']['building'] == 'yes':  # 在预设规定的类型中
+                    buildinglist.append(RoadClass.Building(item['properties'], item['geometry']['coordinates']))
+        return buildinglist
+
     def getFCrosslist(roadlist,dis,divang):
         froadlist = GetData.getFRoadlist(roadlist,dis,divang)
         fcList = []
