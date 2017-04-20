@@ -2,6 +2,10 @@ import pandas as pd
 import numpy as np
 import math
 
+###构建数据结构Building,Road,Segment,Joint重构路网
+
+##Building类：包含id,采样点； 用途：可视化无太多用处
+# 每个建筑都有个id号     #description作为建筑类型的描述     #cordinations 建筑的采样坐标
 class Building:
     id = []
     description = []
@@ -14,7 +18,7 @@ class Building:
         self.description = d
         self.cordinations = c
         Building.tempCount += 1
-        
+
     def getID(self):
         return self.id
 
@@ -28,6 +32,9 @@ class Building:
         return self.bezierP
 
 
+##Road类：包含id,采样点，描述等
+#没条Road对应一个id，利用采样点信息对路网信息进行分析重构以及可视化操作
+# 每个路段都有个id号     #description作为路段类型的描述     #cordinations 路段的采样坐标     #用bezierP拟合的采样点描述
 class Road:
     id = []
     description = []
@@ -41,6 +48,7 @@ class Road:
         self.cordinations = c
         Road.tempCount += 1
 
+    #定义函数insertCordination把新加入的点添加到采样点列表中
     def insertCordination(self,minD_app,insert_c):
         if minD_app in self.cordinations:
             for i in range(len(self.cordinations)-1):
@@ -49,6 +57,7 @@ class Road:
                 else:return "区间不匹配"
         else:return "出错！所选区间不再Cordinations内"
 
+    #定义函数divideByJointList将Road类以交点划分
     def divideByJointList(self, JointList):
         RoadList = []
         c = self.getCordinations()
@@ -78,6 +87,7 @@ class Road:
 
         return RoadList
 
+    #定义函数getMoreData用于扩大采样点集，参数k为扩大k倍（用于KNN,决策树等扩大数据集提高准确度，**现已弃用）
     def getMoreData(self, k):
         x_list = []
         y_list = []
@@ -91,6 +101,7 @@ class Road:
         list_final = list(zip(x_list, y_list))
         return list_final
 
+    #定义函数getAngle获取两个相邻采样点间与正北方向的夹角
     def getAngle(self):
          x_div = self.cordinations[0][0] - self.cordinations[-1][0]
          y_div = self.cordinations[0][1] - self.cordinations[-1][1]
@@ -102,6 +113,7 @@ class Road:
             ang = round(math.atan(y_div / x_div) * 180 / math.pi,2)
          return ang
 
+    #定义函数getAnglelist获取整个路段的相邻采样点与正北方向夹角的list
     def getAnglelist(self):
         anglist = []
         for i in np.arange(len(self.cordinations)):
@@ -128,6 +140,7 @@ class Road:
                 anglist[i + 1] = anglist[i + 1] + 360
         return anglist
 
+    #定义函数getDistanceRate获取个采样点之间的距离，并返回该距离占整个路段的权重
     def getDistanceRate(self):
         distancelist = []
         dis = 0
@@ -144,6 +157,7 @@ class Road:
             disratelist.append(rate)
         return disratelist,dis
 
+    #定义函数getScore用于获取采样路段的平均角度，角度标准差，长度加权标准差等信息。后用来判断两条路的相似性（平行路段）
     def getScore(self):
         ascore = 0
         angmean = np.mean(self.getAnglelist())
@@ -154,6 +168,7 @@ class Road:
         angscore = (ascore/len(self.getAnglelist()))**0.5
         return angmean,angstd,angscore
 
+    #定义函数getMiddlePoint用于获取该路段所有采样点的平均点，用于确定路的位置
     def getMiddlePoint(self):
         p_x = list(zip(*self.cordinations))[0]
         p_y = list(zip(*self.cordinations))[1]
@@ -161,11 +176,14 @@ class Road:
         y = sum(p_y)/len(self.cordinations)
         list_mp = [x,y]
         return  list_mp
+
+    #定义函数 getMiddleCordination用于确定该路段采样点的中位点用于标记text
     def getMiddleCordination(self):
         lenc = len(self.cordinations)
         middlec = self.cordinations[round(lenc/2)]
         return middlec
 
+    #定义函数getFilterAnglelist
     def getFilterAnglelist(self):
         k = 0
         filterAnglelist = []
@@ -181,6 +199,7 @@ class Road:
                     filterAnglelist.append(self.getAnglelist()[k:i + 2])
         return filterAnglelist
 
+    ##以下为获取属性的函数
     def getID(self):
         return self.id
 
@@ -201,6 +220,7 @@ class Road:
         print('Count: %d' % Road.tempCount)
         return Road.tempCount
 
+#定义TempRoad类继承于Road类用于存放更新过的Road类
 class TempRoad(Road):
     id = []
     description = []
@@ -213,7 +233,9 @@ class TempRoad(Road):
         self.description = d
         self.cordinations = c
         Road.tempCount += 1
-#根据描述划分的道路类
+
+#定义SRoad类根据描述划分的道路类继承于Road类,增加Son属性
+#按照描述筛选出的道路类可以大大减少判断平行路段的时间（根据经验，描述中name相同的路段都可能为平行路段缩小了查找范围）
 class SRoad(Road):
     sonroads = []
     sid = []
@@ -277,6 +299,7 @@ class SRoad(Road):
                 cor_list.append(temp)
         return cor_list
 
+    #定义函数setCordinations对SRoad类赋予采样点信息格式[[]],内包含1条或多条采样点信息
     def setCordinations(self,data):
         list_c = []
         if data == None:
@@ -290,6 +313,7 @@ class SRoad(Road):
             list_ca.append(data)
             self.cordinations = list_ca
 # [[[],[],[]]]
+    #定义函数getAllCordinations打破list获取所有采样点信息
     def getAllCordinations(self):
         corlist = []
         for data in self.cordinations:
@@ -300,6 +324,7 @@ class SRoad(Road):
     def getID(self):
         return  self.sid
 
+    #定义函数setSon对每个SRoad类赋予1个或多个Son(Road)--描述中name相同的Road
     def setSon(self, s):
         list_son = []
         list_son.append(self.sonroads)
@@ -317,6 +342,8 @@ class SRoad(Road):
         return self.sonroads
 
 #单线路与双行道道路类
+#区别双行道（平行路段）的意义：1.地图匹配过程中由于GPS误差可能导致匹配到平行路段上，区别了双行道，对双行道施加特殊限制，可避免
+#2.对于路网中特殊结构可能导致平行路段与其他路段相交叉时产生不相连（有空隙）会导致匹配误差，可避免
 class FRoad(SRoad):
     sonroads = []
     fid = []
@@ -330,7 +357,7 @@ class FRoad(SRoad):
         FRoad.fCount += 1
 
 
-# 子路段数据结构
+# 子路段数据结构，将Road类根据Joint进行划分为Segment类
 # 每个路段都有个id号     #description作为路段类型的描述     #cordinations 路段的采样坐标     #用bezierP拟合的采样点描述
 class Segment:
     id = []
@@ -350,6 +377,7 @@ class Segment:
         self.cordinations = c
         Segment.tempCount += 1
 
+    #同Road
     def getMoreData(self, k):
         x_list = []
         y_list = []
@@ -363,6 +391,7 @@ class Segment:
         list_final = list(zip(x_list, y_list))
         return list_final
 
+    #同Road类同函数
     def getAnglelist(self):
         anglist = []
         for i in np.arange(len(self.cordinations)):
@@ -384,6 +413,7 @@ class Segment:
                 anglist.append(ang)
         return anglist
 
+    #同Road类同函数
     def getDistanceRate(self):
         distancelist = []
         dis = 0
@@ -400,6 +430,7 @@ class Segment:
             disratelist.append(rate)
         return disratelist,dis
 
+    #同Road类
     def getScore(self):
         ascore = 0
         angmean = np.mean(self.getAnglelist())
@@ -418,19 +449,24 @@ class Segment:
         list_mp = [x,y]
         return  list_mp
 
+    #定义函数setHeadJoint用于A*
     def setHeadJoint(self, J):
         self.Head = J
         # return self.cordinations[0]
 
+    # 定义函数setTailJoint用于A*
     def setTailJoint(self, J):
         self.Tail = J
 
+    #获取采样点第一个坐标
     def getHead(self):
         return self.cordinations[0]
 
+    #获取采样点最后一个坐标
     def getTail(self):
         return self.cordinations[-1]
 
+    #定义函数getLength获取子路段长度
     def getLength(self):
         former = []
         LEN = 0
@@ -463,6 +499,8 @@ class Segment:
         print('Total Counts: %d' % Segment.tempCount)
         return Segment.tempCount
 
+#平行子路段类，继承于Segment类
+# 每个路段都有个id号     #description作为路段类型的描述     #cordinations 路段的采样坐标     #用bezierP拟合的采样点描述
 class FSegment(Segment):
     id = []
     belongRoadID = []
@@ -481,6 +519,7 @@ class FSegment(Segment):
         FSegment.tempCount += 1
 
 # Joint交叉点数据结构
+#每个交点都有个id     #coordinates交点的路口坐标     #neighborSegment交点相邻的子路段
 class Joint:
     id = 0
     coordinate = []  # 交叉路口坐标
@@ -494,12 +533,14 @@ class Joint:
         self.coordinate = coordinate
         self.neighborSegment = []
 
+    ##获取属性的函数
     def getCoordinate(self):
         return self.coordinate
 
     def getID(self):
         return self.id
 
+    #定义函数isIDinNeighborSegment判断输入ID是否在相邻子路段上
     def isIDinNeighborSegment(self, ID):
         for item in self.neighborSegment:
             # print('self.neighborSegment len:',len(self.neighborSegment))
@@ -513,6 +554,7 @@ class Joint:
     def getNeighborSegment(self):
         return self.neighborSegment
 
+    #定义函数getNeighborJointID获取相邻的Joint的ID
     def getNeighborJointID(self):
         tempList = []
         for item in self.neighborSegment:
@@ -543,6 +585,7 @@ class Joint:
                 print('item.getHead():', item.getHead(), '\t', 'item.getTail():', item.getTail())
         return tempList
 
+    #定义函数appendNeighborSegment为Joint设置相邻子路段
     def appendNeighborSegment(self, r):
         self.neighborSegment.append(r)
 
@@ -552,7 +595,7 @@ class Joint:
 # 每一次计算要建立新的tJoint
 class tJoint(Joint):
     parent = None
-    g = float('inf')
+    g = float('inf')##在python中float('inf')表示正无穷 float('-inf')表示负无穷
     f = float('inf')
 
     def __init__(self, j):

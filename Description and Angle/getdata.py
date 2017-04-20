@@ -4,7 +4,11 @@ import pandas as pd
 import re
 from theFunctions import *
 
+##定义类GetData用于获取数据
+#应用定义的Road，Segment,Joint等数据结构组建路网，获取相应数据
 class GetData:
+
+    ##定义函数getRoadlist获取道路信息的列表返回为Road的类的数据结构的列表
     def getRoadlist(data):
         roadnetworkType = ['primary_link', 'secondary_link', 'tertiary_link', 'primary', 'secondary', 'trunk_link',
                            'service', 'tertiary', 'trunk', 'residential', 'unclassified']
@@ -19,6 +23,7 @@ class GetData:
                             roadList.append(RoadClass.Road(item['properties'], item['geometry']['coordinates']))
         return roadList
 
+    ##定义函数getBuilding获取道路建筑的列表返回为Building的类的数据结构的列表
     def getBuilding(data):
         buildinglist = []
         for item in data.features:
@@ -28,6 +33,7 @@ class GetData:
                     buildinglist.append(RoadClass.Building(item['properties'], item['geometry']['coordinates']))
         return buildinglist
 
+    ##定义函数getFCrosslist输入dis（最大容忍误差距离），divang（最大容忍误差角度）获取平行路段的交点意在找出隐藏路段即平行路段相交路段中的特殊路段
     def getFCrosslist(roadlist,dis,divang):
         froadlist = GetData.getFRoadlist(roadlist,dis,divang)
         fcList = []
@@ -37,6 +43,7 @@ class GetData:
         for data in froadlist:
             if len(data.getCordinations()) ==2:
                 for cdata in crossList:
+                    ##该方法获取交点的原理是做垂直，取垂点为新的Cross
                     # if cdata in data.getSonRoads()[0].getCordinations():
                     #     # tr = RoadClass.TempRoad(data.getSonRoads()[0].description, data.getSonRoads()[0].cordinations)
                     #     # tempRoadList.append(tr)
@@ -54,6 +61,7 @@ class GetData:
                     #     # data.getSonRoads()[1].insertCordination(minD_app, point)
                     #     fnlist.append(point)
                     #     fcList.append([point, cdata])
+                    ##该方法为去平行路段内距离最近的一个采样点为Cross（可以扩大采样点来提高准确度）
                     if cdata in data.getCordinations()[0]:
                         cor = data.getCordinations()[1]
                         min = ((cor[0][0] - cdata[0]) ** 2 + (cor[0][1] - cdata[1]) ** 2) ** 0.5
@@ -78,7 +86,7 @@ class GetData:
                         fcList.append([point,cdata])
                     else:
                         pass
-                        # 交叉点会有重复的，去重。set好像不支持二维列表。
+                        # 交叉点会有重复的，去重。。
             # else:
             #     tr = RoadClass.TempRoad(data.description,data.cordinations[0])
             #     tempRoadList.append(tr)
@@ -91,7 +99,7 @@ class GetData:
         for nrd in fcList:
             if nrd not in notrealdouble:
                 notrealdouble.append(nrd)
-
+        #大量的去重操作
         for cc in crossList:
             fnlist.append(cc)
         fcrosslist = []
@@ -100,9 +108,10 @@ class GetData:
                 fcrosslist.append(item)
         notrealcrosslist = [j for j in notrealcrosslist_1 if j not in crossList]
         notrealdoublelist = [k for k in notrealdouble if k[0] not in crossList]
-
+        #返回1.加入新的Cross的所有交叉点，2.新的Cross, 3.新的交叉点的两点坐标
         return fcrosslist,notrealcrosslist,notrealdoublelist
 
+    #对Roadlist进行分析或取交叉点列表
     def getCrosslist(roadlist):
         # 获得路网的交叉点（路A与路B的坐标相同的点判定为相交点。）
         ccList = []
@@ -155,6 +164,7 @@ class GetData:
                 segmentlist.append(RoadClass.Segment(item.id, item.description, segmentCordination))
         return segmentlist
 
+    #取平行子路段输入dis（最大容忍误差距离），divang（最大容忍误差角度）获取平行路段的交点意在找出隐藏路段即平行路段相交路段中的特殊路段
     def getFsegmentlist(roadlist,dis,divang):
         fcrosslist = GetData.getFCrosslist(roadlist,dis,divang)[0]
         # 取数据中带有交叉点的路
@@ -174,11 +184,13 @@ class GetData:
             for segmentCordination in tempList1:
                 count += 1
                 fsegmentlist.append(RoadClass.FSegment(item.id, item.description, segmentCordination))
+
         othercrossinfo = GetData.getFCrosslist(roadlist,dis,divang)[2]
         for item2 in othercrossinfo:
-            fsegmentlist.append(RoadClass.FSegment(None, None, item2))
+            fsegmentlist.append(RoadClass.FSegment(None, None, item2)) ##定义新加的交点路段描述为None,id为None
         return fsegmentlist
 
+    #获取交叉点的函数
     def getJointlist(segmentlist, crosslist):
         jointlist_1 = []
         for itemC in crosslist:
@@ -192,7 +204,7 @@ class GetData:
                 if (itemC == itemS.getHead()) | (itemC == itemS.getTail()):
                     # if (itemC is itemS.getHead())|(itemC is itemS.getTail()):  #之前用is来判断，不对，隐藏的bug过了好久才发现。
                     jointC.appendNeighborSegment(itemS)
-                    # 如果交叉点的邻居大于2（连接的子路段个数大于2），为交叉路口。
+                    # 如果交叉点的邻居大于2（连接的子路段个数大于等于2），为交叉路口。
                     if len(jointC.neighborSegment) >= 2:
                         jointlist_1.append(jointC)
         jointlist = []
@@ -201,6 +213,7 @@ class GetData:
                 jointlist.append(clist)
         return jointlist
 
+    #定义函数getNeighborSegment获取交叉点相邻子路段
     def getNeighborSegment(segmentlist, crossdata):
         neighborSegmentList = []
         jointC = RoadClass.Joint(crossdata)
@@ -218,6 +231,7 @@ class GetData:
                             neighborSegmentList.append(data.getID())
         return neighborSegmentList
 
+    #定义函数searchroad利用模糊查询正则匹配查询出与输入匹配的路段信息
     def searchroad(jsondata, roadname):
         roadnetworkType = ['primary_link', 'secondary_link', 'tertiary_link', 'primary', 'secondary', 'trunk_link',
                            'service', 'tertiary', 'trunk', 'residential', 'unclassified']
@@ -233,9 +247,12 @@ class GetData:
         if len(locationdata) == 0:
             print("不存在%s" % roadname)
         return locationdata
+
+    #定义函数getSRoadlist获取描述相同路段缩短运行时间
     def getSRoadlist(roadlist):
         deslist = []
         sroadlist = []
+        #描述相同聚为一类
         for data in roadlist:
             if 'bridge' not in data.getDescription():
                 if 'name' in data.getDescription():
@@ -258,6 +275,7 @@ class GetData:
                     sroadlist.append(sroad)
         return  sroadlist
 
+    #定义函数filterlist，用来对同描述的数据进行配对，便于后来的平行路段划分操作
     def filterlist(sameroadlist, l):
         md_finnal = []
         md_list = []
