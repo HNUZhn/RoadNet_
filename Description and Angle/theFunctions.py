@@ -54,6 +54,7 @@ def get_Distance_and_Coordinate(P1, P2, P3):
         # print ('2The distance of Point C to the line AB is:%f'%distance)
     return distance,(x0,y0)
 
+##获取点到线段的距离以及映射点
 def get_mindisandcordinations(seg, P):
     minD = []
     minD_C = []

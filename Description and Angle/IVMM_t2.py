@@ -156,6 +156,8 @@ def AStar(StartNodeID, EndNodeID):
 ####最短距离算法结束
 
 ###IVAM改进算法
+
+##获取匹配子路段集的函数返回多个字路段的列表
 def getCP(fsegmentList, P):
     segmentList = []
     for itemF in fsegmentList:
@@ -202,6 +204,7 @@ def getCP(fsegmentList, P):
         min_len.append(len(list(D2)))
     return resultList,min_len
 
+##获取最短距离及对应的坐标
 def get_mindisandcordinations(P,seg):
     minD = []
     minD_C = []
@@ -224,6 +227,7 @@ def get_mindisandcordinations(P,seg):
 
     return minD,minD_C,minD_app
 
+###定义函数matchGPStoRoad来实现地图匹配
 def matchGPStoRoad(data,fsegmentlist,froadlist,angle):
     obxy = data.loc[:, ["Lon", "Lat", "Direct"]]
     dislist = []

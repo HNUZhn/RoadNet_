@@ -317,6 +317,7 @@ class GetData:
         md_fin = md_fin2
         return md_fin
 
+    #定义函数getFRealteddata，返回1.doubleroad,相同的路对，2.非doubleRoad
     def getFRealteddata(roadlist,dis,divang):
         s = GetData.getParallelroadIDList(roadlist)
         fl = GetData.filterlist(s, dis)
@@ -325,6 +326,7 @@ class GetData:
             list_i = fl[i][0:2]
             dissameroadlist.append(list_i)
         angelesameroadlist = []
+        #判断角度是否在可容忍误差内
         for road_data in dissameroadlist:
             if (road_data[0].getScore()[0] - divang < road_data[1].getScore()[0] < road_data[0].getScore()[
                 0] + divang) | \
@@ -338,6 +340,7 @@ class GetData:
 
         return angelesameroadlist,list_out
 
+    #定义函数getFRoadlist确定平行路段并赋予给对性的平行路段数据结构
     def getFRoadlist(roadlist,dis,divang):
         froadlist = []
         sroadList = GetData.getSRoadlist(roadlist)
@@ -368,6 +371,7 @@ class GetData:
         return  froadlist
 
 
+    ##定义函数getBridgelist获取桥的信息
     def getBridgelist(roadlist):
         bridgelist = []
         for data in roadlist:
@@ -376,7 +380,7 @@ class GetData:
                     bridgelist.append(data)
         return bridgelist
 
-
+    #定义函数tolist 作用：将双层嵌套列表拆开为一个列表
     def tolist(list):
         list_one = []
         for i in list:
@@ -384,6 +388,7 @@ class GetData:
                 list_one.append(j)
         return list_one
 
+    #获取平行路段ID的函数
     def getParallelroadIDList(roadList):
         sroadList = GetData.getSRoadlist(roadList)
         sroadIDList = []
@@ -395,6 +400,7 @@ class GetData:
         return sroadIDList
 
 
+##测试程序
 if __name__ == "__main__":
     roadname = "金田路"
     jsonURL = 'C:\\Users\\Cimucy\\Documents\\Python Scripts\\毕业设计\\street2.json'

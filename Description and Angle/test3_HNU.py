@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import math
 import matplotlib
 from getdata import *
-
+##湖大数据的匹配
 # jsonURL = 'street2.json'
 jsonURL = 'C:\\Users\\Cimucy\\Documents\\Tencent Files\\737728114\\FileRecv\\hnumap1.json'
 jsondata = pd.read_json(jsonURL)
